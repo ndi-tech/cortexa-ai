@@ -1,10 +1,11 @@
 {
   "name": "cortexa-ai",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "AI SaaS Platform for Document Chat",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "build:css": "npx @tailwindcss/cli -i ./public/css/style.css -o ./public/css/output.css --minify"
   },
   "keywords": [],
   "author": "",
@@ -23,5 +24,9 @@
     "pdf-parse": "^2.4.5",
     "pdfreader": "^3.0.8",
     "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
   }
 }
