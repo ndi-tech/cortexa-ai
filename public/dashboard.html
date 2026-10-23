@@ -28,7 +28,6 @@
         .loading-dots::after { content: '...'; animation: dots 1.5s steps(4, end) infinite; }
         @keyframes dots { 0%, 20% { content: ''; } 40% { content: '.'; } 60% { content: '..'; } 80%, 100% { content: '...'; } }
         
-        /* Markdown Styling */
         .md-content p { margin-bottom: 0.75rem; }
         .md-content p:last-child { margin-bottom: 0; }
         .md-content h1, .md-content h2, .md-content h3 { font-weight: 700; color: #0f172a; margin-top: 1rem; margin-bottom: 0.5rem; font-size: 1rem; }
@@ -40,16 +39,30 @@
         .dark .md-content strong { color: #ffffff; }
         .md-content code { background: #f1f5f9; padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.8em; color: #8b5cf6; }
         .dark .md-content code { background: #27272a; }
+
+        /* Mobile Sidebar Slide */
+        .sidebar { transition: transform 0.3s ease-in-out; }
+        .sidebar.closed { transform: translateX(-100%); }
     </style>
 </head>
-<body class="font-sans antialiased flex h-screen bg-slate-50 text-slate-800 dark:bg-[#09090b] dark:text-zinc-100">
+<body class="font-sans antialiased flex h-screen bg-slate-50 text-slate-800 dark:bg-[#09090b] dark:text-zinc-100 overflow-hidden">
 
-    <aside class="w-80 bg-white dark:bg-[#18181b] border-r border-slate-200 dark:border-white/10 flex flex-col h-full z-20">
-        <div class="p-6 border-b border-slate-200 dark:border-white/10 flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-pink-500 flex items-center justify-center shadow-lg shadow-brand/30">
-                <i class="fa-solid fa-brain text-white text-sm"></i>
+    <!-- Mobile Overlay -->
+    <div id="mobileOverlay" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar closed md:translate-x-0 fixed md:static inset-y-0 left-0 w-80 bg-white dark:bg-[#18181b] border-r border-slate-200 dark:border-white/10 flex flex-col h-full z-40 shadow-2xl md:shadow-none">
+        <div class="p-6 border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-pink-500 flex items-center justify-center shadow-lg shadow-brand/30">
+                    <i class="fa-solid fa-brain text-white text-sm"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Cortexa<span class="text-brand">AI</span></span>
             </div>
-            <span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Cortexa<span class="text-brand">AI</span></span>
+            <!-- Close Button Mobile -->
+            <button class="md:hidden text-slate-500 hover:text-brand" onclick="toggleSidebar()">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
         </div>
 
         <div class="p-6 flex-1 overflow-y-auto flex flex-col">
@@ -77,33 +90,39 @@
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col relative h-full bg-slate-50 dark:bg-[#09090b]">
-        <header class="h-20 border-b border-slate-200 dark:border-white/10 flex items-center px-8 justify-between bg-white dark:bg-[#18181b] z-10">
-            <h2 id="chatTitle" class="text-lg font-semibold text-slate-800 dark:text-white">AI Study Assistant</h2>
+    <!-- Main Chat Area -->
+    <main class="flex-1 flex flex-col relative h-full bg-slate-50 dark:bg-[#09090b] w-full">
+        <header class="h-20 border-b border-slate-200 dark:border-white/10 flex items-center px-4 md:px-8 justify-between bg-white dark:bg-[#18181b] z-10">
             
-            <div class="flex items-center gap-4">
-                <select id="modelSelect" class="bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 text-sm text-slate-700 dark:text-zinc-300 rounded-lg py-2 px-3 focus:outline-none focus:border-brand cursor-pointer">
-                    <option value="openai/gpt-4o-mini">GPT-4o Mini (Fast)</option>
-                    <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet (Smart)</option>
-                    <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 (Free)</option>
-                    <option value="google/gemini-flash-1.5:free">Gemini Flash (Free)</option>
+            <div class="flex items-center gap-3">
+                <!-- Mobile Menu Button -->
+                <button class="md:hidden text-slate-600 dark:text-zinc-300 hover:text-brand text-xl" onclick="toggleSidebar()">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <h2 id="chatTitle" class="text-lg font-semibold text-slate-800 dark:text-white truncate max-w-[150px] md:max-w-none">AI Assistant</h2>
+            </div>
+            
+            <div class="flex items-center gap-2 md:gap-4">
+                <select id="modelSelect" class="bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 text-xs md:text-sm text-slate-700 dark:text-zinc-300 rounded-lg py-2 px-2 md:px-3 focus:outline-none focus:border-brand cursor-pointer max-w-[120px] md:max-w-none">
+                    <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+                    <option value="anthropic/claude-3.5-sonnet">Claude 3.5</option>
+                    <option value="meta-llama/llama-3-8b-instruct:free">Llama 3</option>
+                    <option value="google/gemini-flash-1.5:free">Gemini Flash</option>
                 </select>
 
-                <button id="themeToggle" class="w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition border border-slate-200 dark:border-zinc-700">
-                    <i class="fa-solid fa-moon dark:hidden"></i>
-                    <i class="fa-solid fa-sun hidden dark:block"></i>
+                <button id="themeToggle" class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition border border-slate-200 dark:border-zinc-700">
+                    <i class="fa-solid fa-moon dark:hidden text-sm"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-sm"></i>
                 </button>
-
-                <span class="text-xs bg-green-500/10 text-green-600 dark:text-green-400 px-3 py-1 rounded-full border border-green-500/20">System Online</span>
             </div>
         </header>
 
-        <div id="chatContainer" class="flex-1 overflow-y-auto chat-scroll p-8 space-y-6"></div>
+        <div id="chatContainer" class="flex-1 overflow-y-auto chat-scroll p-4 md:p-8 space-y-6"></div>
 
-        <div class="p-6 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] z-10">
+        <div class="p-4 md:p-6 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] z-10">
             <div class="relative max-w-4xl mx-auto">
-                <input type="text" id="chatInput" placeholder="Select or upload a document to begin..." disabled class="w-full bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-full py-4 px-6 pr-16 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition disabled:opacity-50" autocomplete="off">
-                <button id="sendBtn" disabled class="absolute right-2 top-2 bottom-2 bg-brand hover:bg-brandDark w-12 rounded-full flex items-center justify-center text-white transition shadow-lg shadow-brand/20 disabled:opacity-50">
+                <input type="text" id="chatInput" placeholder="Select a document to begin..." disabled class="w-full bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-full py-3 md:py-4 px-5 md:px-6 pr-14 md:pr-16 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition disabled:opacity-50" autocomplete="off">
+                <button id="sendBtn" disabled class="absolute right-1.5 md:right-2 top-1.5 md:top-2 bottom-1.5 md:bottom-2 bg-brand hover:bg-brandDark w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-white transition shadow-lg shadow-brand/20 disabled:opacity-50">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
             </div>
@@ -111,6 +130,14 @@
     </main>
 
     <script>
+        // Mobile Sidebar Logic
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            sidebar.classList.toggle('closed');
+            overlay.classList.toggle('hidden');
+        }
+
         const themeToggleBtn = document.getElementById('themeToggle');
         const html = document.documentElement;
         if (localStorage.getItem('theme') === 'light') { html.classList.remove('dark'); } 
@@ -140,25 +167,25 @@
 
         function addMessage(text, isUser) {
             const wrapper = document.createElement('div');
-            wrapper.className = `flex gap-4 ${isUser ? 'justify-end' : ''}`;
+            wrapper.className = `flex gap-3 md:gap-4 ${isUser ? 'justify-end' : ''}`;
             
             const avatar = document.createElement('div');
             avatar.className = isUser 
-                ? "w-10 h-10 rounded-full bg-slate-300 dark:bg-zinc-700 flex items-center justify-center shrink-0 text-sm"
-                : "w-10 h-10 rounded-full bg-gradient-to-br from-brand to-pink-500 flex items-center justify-center shrink-0 shadow-lg shadow-brand/20";
-            avatar.innerHTML = isUser ? '<i class="fa-solid fa-user text-slate-600 dark:text-white"></i>' : '<i class="fa-solid fa-robot text-white text-sm"></i>';
+                ? "w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-300 dark:bg-zinc-700 flex items-center justify-center shrink-0 text-xs md:text-sm"
+                : "w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-brand to-pink-500 flex items-center justify-center shrink-0 shadow-lg shadow-brand/20";
+            avatar.innerHTML = isUser ? '<i class="fa-solid fa-user text-slate-600 dark:text-white"></i>' : '<i class="fa-solid fa-robot text-white text-xs md:text-sm"></i>';
 
             const bubble = document.createElement('div');
             
             if (isUser) {
-                bubble.className = "bg-brand text-white rounded-2xl rounded-tr-sm p-5 text-sm max-w-2xl shadow-lg shadow-brand/20 whitespace-pre-wrap";
+                bubble.className = "bg-brand text-white rounded-2xl rounded-tr-sm p-3 md:p-5 text-sm max-w-[85%] md:max-w-2xl shadow-lg shadow-brand/20 whitespace-pre-wrap";
                 bubble.innerText = text;
             } else {
-                bubble.className = "bg-white dark:bg-[#18181b] border border-slate-200 dark:border-zinc-800 rounded-2xl rounded-tl-sm p-5 text-sm max-w-2xl leading-relaxed text-slate-700 dark:text-zinc-300 shadow-sm relative group md-content";
+                bubble.className = "bg-white dark:bg-[#18181b] border border-slate-200 dark:border-zinc-800 rounded-2xl rounded-tl-sm p-3 md:p-5 text-sm max-w-[85%] md:max-w-2xl leading-relaxed text-slate-700 dark:text-zinc-300 shadow-sm relative group md-content";
                 bubble.innerHTML = marked.parse(text);
                 
                 const copyBtn = document.createElement('button');
-                copyBtn.className = "absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-2 text-slate-400 hover:text-brand";
+                copyBtn.className = "absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-2 text-slate-400 hover:text-brand";
                 copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
                 copyBtn.onclick = () => {
                     navigator.clipboard.writeText(text);
@@ -183,9 +210,12 @@
             chatTitle.innerText = fileName; 
             
             chatInput.disabled = false; 
-            chatInput.placeholder = "Ask a question about this document...";
+            chatInput.placeholder = "Ask a question...";
             sendBtn.disabled = false;
             sendBtn.classList.remove('opacity-50');
+
+            // Close sidebar on mobile after selecting
+            if(window.innerWidth < 768) toggleSidebar();
 
             document.querySelectorAll('.file-item').forEach(el => el.classList.remove('bg-brand/20', 'border-brand', 'text-brand'));
             const activeEl = document.getElementById(`file-${fileId}`);
