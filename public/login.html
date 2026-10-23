@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cortexa AI | Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] }, colors: { brand: '#8b5cf6', brandDark: '#6d28d9' } } }
+        }
+    </script>
+    <style>
+        body { background-color: #09090b; color: #f4f4f5; }
+        .glass-card { background: rgba(24, 24, 27, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); }
+        .orb { position: absolute; border-radius: 50%; filter: blur(100px); z-index: -1; opacity: 0.4; }
+        .orb-1 { top: -10%; left: -10%; width: 400px; height: 400px; background: #8b5cf6; }
+        .orb-2 { bottom: -10%; right: -10%; width: 400px; height: 400px; background: #ec4899; }
+    </style>
+</head>
+<body class="font-sans antialiased flex items-center justify-center h-screen overflow-hidden">
+    
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <!-- Auth Container -->
+    <div class="glass-card w-full max-w-md p-8 rounded-2xl relative">
+        <div class="text-center mb-8">
+            <div class="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-brand to-pink-500 flex items-center justify-center mb-4 shadow-lg shadow-brand/30">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            </div>
+            <h2 class="text-2xl font-bold text-white" id="authTitle">Welcome Back</h2>
+            <p class="text-zinc-400 text-sm mt-2" id="authSubtitle">Log in to access your documents.</p>
+        </div>
+
+        <form id="authForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-zinc-400 mb-1">Email</label>
+                <input type="email" id="email" required class="w-full bg-zinc-900 border border-white/10 rounded-lg py-3 px-4 text-sm text-white focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/50 transition" placeholder="you@example.com">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-zinc-400 mb-1">Password</label>
+                <input type="password" id="password" required class="w-full bg-zinc-900 border border-white/10 rounded-lg py-3 px-4 text-sm text-white focus:outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/50 transition" placeholder="••••••••">
+            </div>
+            
+            <div id="errorMsg" class="text-red-400 text-sm hidden text-center bg-red-400/10 py-2 rounded"></div>
+
+            <button type="submit" id="submitBtn" class="w-full bg-brand hover:bg-brandDark text-white font-bold py-3 rounded-lg transition-all shadow-lg shadow-brand/20 mt-2">
+                Log In
+            </button>
+        </form>
+
+        <p class="text-center text-sm text-zinc-400 mt-6">
+            Don't have an account? 
+            <a href="#" id="toggleAuth" class="text-brand hover:text-white transition font-semibold cursor-pointer">Sign Up</a>
+        </p>
+    </div>
+
+    <script>
+        let isLoginMode = true;
+        const form = document.getElementById('authForm');
+        const toggleBtn = document.getElementById('toggleAuth');
+        const title = document.getElementById('authTitle');
+        const subtitle = document.getElementById('authSubtitle');
+        const submitBtn = document.getElementById('submitBtn');
+        const errorMsg = document.getElementById('errorMsg');
+
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            isLoginMode = !isLoginMode;
+            if(isLoginMode) {
+                title.innerText = "Welcome Back";
+                subtitle.innerText = "Log in to access your documents.";
+                submitBtn.innerText = "Log In";
+                toggleBtn.innerText = "Sign Up";
+            } else {
+                title.innerText = "Create an Account";
+                subtitle.innerText = "Join Cortexa AI and start learning smarter.";
+                submitBtn.innerText = "Sign Up Free";
+                toggleBtn.innerText = "Log In";
+            }
+            errorMsg.classList.add('hidden');
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            submitBtn.innerText = "Processing...";
+            submitBtn.disabled = true;
+            errorMsg.classList.add('hidden');
+
+            const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/signup';
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userEmail', email);
+                    window.location.href = '/dashboard.html'; 
+                } else {
+                    errorMsg.innerText = data.error || "Something went wrong";
+                    errorMsg.classList.remove('hidden');
+                }
+            } catch (err) {
+                errorMsg.innerText = "Network error. Is the server running?";
+                errorMsg.classList.remove('hidden');
+            }
+
+            submitBtn.innerText = isLoginMode ? "Log In" : "Sign Up Free";
+            submitBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>

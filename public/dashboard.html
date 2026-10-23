@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cortexa AI | Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: { brand: '#8b5cf6', brandDark: '#6d28d9' }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body, aside, header, main, div, input, select, button { transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
+        .chat-scroll::-webkit-scrollbar { width: 6px; }
+        .chat-scroll::-webkit-scrollbar-thumb { background: #52525b; border-radius: 10px; }
+        .loading-dots::after { content: '...'; animation: dots 1.5s steps(4, end) infinite; }
+        @keyframes dots { 0%, 20% { content: ''; } 40% { content: '.'; } 60% { content: '..'; } 80%, 100% { content: '...'; } }
+        
+        /* Markdown Styling */
+        .md-content p { margin-bottom: 0.75rem; }
+        .md-content p:last-child { margin-bottom: 0; }
+        .md-content h1, .md-content h2, .md-content h3 { font-weight: 700; color: #0f172a; margin-top: 1rem; margin-bottom: 0.5rem; font-size: 1rem; }
+        .dark .md-content h1, .dark .md-content h2, .dark .md-content h3 { color: #ffffff; }
+        .md-content ul { list-style-type: disc; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+        .md-content ol { list-style-type: decimal; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+        .md-content li { margin-bottom: 0.25rem; }
+        .md-content strong { font-weight: 600; color: #0f172a; }
+        .dark .md-content strong { color: #ffffff; }
+        .md-content code { background: #f1f5f9; padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.8em; color: #8b5cf6; }
+        .dark .md-content code { background: #27272a; }
+    </style>
+</head>
+<body class="font-sans antialiased flex h-screen bg-slate-50 text-slate-800 dark:bg-[#09090b] dark:text-zinc-100">
+
+    <aside class="w-80 bg-white dark:bg-[#18181b] border-r border-slate-200 dark:border-white/10 flex flex-col h-full z-20">
+        <div class="p-6 border-b border-slate-200 dark:border-white/10 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand to-pink-500 flex items-center justify-center shadow-lg shadow-brand/30">
+                <i class="fa-solid fa-brain text-white text-sm"></i>
+            </div>
+            <span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Cortexa<span class="text-brand">AI</span></span>
+        </div>
+
+        <div class="p-6 flex-1 overflow-y-auto flex flex-col">
+            <button id="logoutBtn" class="text-xs text-slate-500 hover:text-brand dark:text-zinc-400 dark:hover:text-white mb-6 flex items-center gap-2 transition w-max">
+                <i class="fa-solid fa-arrow-left"></i> Log out
+            </button>
+            
+            <h3 class="text-sm font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-4">Upload Document</h3>
+            
+            <div id="dropZone" class="border-2 border-dashed border-slate-300 dark:border-zinc-700 rounded-xl p-6 text-center hover:border-brand dark:hover:border-brand transition cursor-pointer relative group bg-slate-50 dark:bg-transparent">
+                <input type="file" id="fileInput" accept=".pdf, .txt, .png, .jpg, .jpeg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                <div class="w-12 h-12 bg-slate-200 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition">
+                    <i class="fa-solid fa-file-pdf text-brand text-xl"></i>
+                </div>
+                <p class="text-sm font-medium text-slate-700 dark:text-white">Click to upload</p>
+                <p class="text-xs text-slate-500 mt-1">PDF, TXT, PNG (Max 100 pages)</p>
+            </div>
+            
+            <div id="uploadStatus" class="hidden mt-4 text-sm text-center text-brand">
+                <i class="fa-solid fa-circle-notch fa-spin"></i> Processing File...
+            </div>
+
+            <h3 class="text-sm font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mt-8 mb-4">Recent Files</h3>
+            <div id="recentFilesList" class="space-y-2"></div>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col relative h-full bg-slate-50 dark:bg-[#09090b]">
+        <header class="h-20 border-b border-slate-200 dark:border-white/10 flex items-center px-8 justify-between bg-white dark:bg-[#18181b] z-10">
+            <h2 id="chatTitle" class="text-lg font-semibold text-slate-800 dark:text-white">AI Study Assistant</h2>
+            
+            <div class="flex items-center gap-4">
+                <select id="modelSelect" class="bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 text-sm text-slate-700 dark:text-zinc-300 rounded-lg py-2 px-3 focus:outline-none focus:border-brand cursor-pointer">
+                    <option value="openai/gpt-4o-mini">GPT-4o Mini (Fast)</option>
+                    <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet (Smart)</option>
+                    <option value="meta-llama/llama-3-8b-instruct:free">Llama 3 (Free)</option>
+                    <option value="google/gemini-flash-1.5:free">Gemini Flash (Free)</option>
+                </select>
+
+                <button id="themeToggle" class="w-10 h-10 rounded-full flex items-center justify-center bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition border border-slate-200 dark:border-zinc-700">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block"></i>
+                </button>
+
+                <span class="text-xs bg-green-500/10 text-green-600 dark:text-green-400 px-3 py-1 rounded-full border border-green-500/20">System Online</span>
+            </div>
+        </header>
+
+        <div id="chatContainer" class="flex-1 overflow-y-auto chat-scroll p-8 space-y-6"></div>
+
+        <div class="p-6 border-t border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] z-10">
+            <div class="relative max-w-4xl mx-auto">
+                <input type="text" id="chatInput" placeholder="Select or upload a document to begin..." disabled class="w-full bg-slate-100 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-700 rounded-full py-4 px-6 pr-16 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand transition disabled:opacity-50" autocomplete="off">
+                <button id="sendBtn" disabled class="absolute right-2 top-2 bottom-2 bg-brand hover:bg-brandDark w-12 rounded-full flex items-center justify-center text-white transition shadow-lg shadow-brand/20 disabled:opacity-50">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        if (localStorage.getItem('theme') === 'light') { html.classList.remove('dark'); } 
+        else { html.classList.add('dark'); localStorage.setItem('theme', 'dark'); }
+        themeToggleBtn.addEventListener('click', () => {
+            if (html.classList.contains('dark')) { html.classList.remove('dark'); localStorage.setItem('theme', 'light'); } 
+            else { html.classList.add('dark'); localStorage.setItem('theme', 'dark'); }
+        });
+
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login.html';
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            window.location.href = '/login.html';
+        });
+
+        const chatContainer = document.getElementById('chatContainer');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const fileInput = document.getElementById('fileInput');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const recentFilesList = document.getElementById('recentFilesList');
+        const chatTitle = document.getElementById('chatTitle');
+
+        let currentFile = null; 
+        let activeFileId = null;
+
+        function addMessage(text, isUser) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex gap-4 ${isUser ? 'justify-end' : ''}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = isUser 
+                ? "w-10 h-10 rounded-full bg-slate-300 dark:bg-zinc-700 flex items-center justify-center shrink-0 text-sm"
+                : "w-10 h-10 rounded-full bg-gradient-to-br from-brand to-pink-500 flex items-center justify-center shrink-0 shadow-lg shadow-brand/20";
+            avatar.innerHTML = isUser ? '<i class="fa-solid fa-user text-slate-600 dark:text-white"></i>' : '<i class="fa-solid fa-robot text-white text-sm"></i>';
+
+            const bubble = document.createElement('div');
+            
+            if (isUser) {
+                bubble.className = "bg-brand text-white rounded-2xl rounded-tr-sm p-5 text-sm max-w-2xl shadow-lg shadow-brand/20 whitespace-pre-wrap";
+                bubble.innerText = text;
+            } else {
+                bubble.className = "bg-white dark:bg-[#18181b] border border-slate-200 dark:border-zinc-800 rounded-2xl rounded-tl-sm p-5 text-sm max-w-2xl leading-relaxed text-slate-700 dark:text-zinc-300 shadow-sm relative group md-content";
+                bubble.innerHTML = marked.parse(text);
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.className = "absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-2 text-slate-400 hover:text-brand";
+                copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+                copyBtn.onclick = () => {
+                    navigator.clipboard.writeText(text);
+                    copyBtn.innerHTML = '<i class="fa-solid fa-check text-green-500"></i>';
+                    setTimeout(() => copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>', 2000);
+                };
+                bubble.appendChild(copyBtn);
+            }
+
+            if (isUser) { wrapper.appendChild(bubble); wrapper.appendChild(avatar); } 
+            else { wrapper.appendChild(avatar); wrapper.appendChild(bubble); }
+
+            chatContainer.appendChild(wrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return bubble;
+        }
+
+        async function loadChatSession(fileId, fileName) {
+            activeFileId = fileId;
+            currentFile = null; 
+            chatContainer.innerHTML = ''; 
+            chatTitle.innerText = fileName; 
+            
+            chatInput.disabled = false; 
+            chatInput.placeholder = "Ask a question about this document...";
+            sendBtn.disabled = false;
+            sendBtn.classList.remove('opacity-50');
+
+            document.querySelectorAll('.file-item').forEach(el => el.classList.remove('bg-brand/20', 'border-brand', 'text-brand'));
+            const activeEl = document.getElementById(`file-${fileId}`);
+            if(activeEl) activeEl.classList.add('bg-brand/20', 'border-brand', 'text-brand');
+
+            try {
+                const res = await fetch(`/api/history/chats/${fileId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const chats = await res.json();
+                if (chats.length === 0) {
+                    addMessage(`You are now chatting about **${fileName}**. What would you like to know?`, false);
+                } else {
+                    chats.forEach(msg => addMessage(msg.content, msg.role === 'user'));
+                }
+            } catch (error) { console.error("Failed to load chats:", error); }
+        }
+
+        async function loadHistoryFiles() {
+            try {
+                const fileRes = await fetch('/api/history/files', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (fileRes.ok) {
+                    const files = await fileRes.json();
+                    recentFilesList.innerHTML = '';
+                    files.forEach(file => {
+                        const fileDiv = document.createElement('div');
+                        fileDiv.id = `file-${file._id}`;
+                        fileDiv.className = "file-item p-3 bg-slate-100 dark:bg-zinc-900 border border-transparent rounded-lg flex items-center gap-3 text-sm text-slate-700 dark:text-zinc-300 cursor-pointer transition hover:bg-slate-200 dark:hover:bg-zinc-800";
+                        fileDiv.innerHTML = `<i class="fa-solid fa-file-pdf text-brand"></i> <span class="truncate">${file.fileName}</span>`;
+                        fileDiv.onclick = () => loadChatSession(file._id, file.fileName);
+                        recentFilesList.appendChild(fileDiv);
+                    });
+                }
+            } catch (error) { console.error("Failed to load files:", error); }
+        }
+        loadHistoryFiles();
+
+        fileInput.addEventListener('change', async (e) => {
+            if (e.target.files.length > 0) {
+                currentFile = e.target.files[0];
+                uploadStatus.classList.remove('hidden');
+                try {
+                    const formData = new FormData();
+                    formData.append('file', currentFile);
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+                    const data = await response.json();
+                    uploadStatus.classList.add('hidden');
+                    if (response.ok) {
+                        await loadHistoryFiles(); 
+                        loadChatSession(data.file._id, data.file.fileName);
+                    }
+                } catch (error) { console.error("Upload error:", error); uploadStatus.classList.add('hidden'); }
+            }
+        });
+
+        sendBtn.addEventListener('click', async () => {
+            const text = chatInput.value.trim();
+            if (!text || !activeFileId) return;
+
+            addMessage(text, true);
+            chatInput.value = '';
+
+            const selectedModel = document.getElementById('modelSelect').value;
+            const loadingBubble = addMessage("Thinking", false);
+            loadingBubble.classList.add('loading-dots');
+
+            try {
+                const formData = new FormData();
+                formData.append('question', text);
+                formData.append('model', selectedModel); 
+                formData.append('fileId', activeFileId); 
+                if (currentFile) formData.append('file', currentFile); 
+
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData 
+                });
+
+                const data = await response.json();
+                loadingBubble.parentElement.remove();
+
+                if (response.ok) { addMessage(data.answer, false); } 
+                else { addMessage("Error: " + (data.error || "Something went wrong."), false); }
+
+            } catch (error) { loadingBubble.parentElement.remove(); addMessage("Network error.", false); }
+        });
+
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendBtn.click(); });
+    </script>
+</body>
+</html>
